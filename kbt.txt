@@ -1,0 +1,2 @@
+[ \left\{  \left\{  \right\} , \left\{  \left\{ 1<x \right\} , \left\{ x<1 \right\} 
+ \right\}  \right\} ]

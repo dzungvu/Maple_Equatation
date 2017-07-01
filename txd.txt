@@ -1,0 +1,1 @@
+[ \left\{ x\neq 1 \right\} ]

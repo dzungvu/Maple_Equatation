@@ -1,0 +1,1 @@
+"D:\CAMI\Maple\bin.X86_64_WINDOWS/cmaple.exe" solve.txt

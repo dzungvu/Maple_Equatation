@@ -1,0 +1,573 @@
+KhaoSatHamSo := module()
+option package;
+export Moduleload, DangHamSo, TapXacDinh, DiemCucDai, DiemCucTieu, TapDiemUon, KhoangLoiLom, TiemCanXien, TiemCanDung,KhoangBienThien, VeDoThi;
+
+
+
+Moduleload := module()
+  global `type/phanthuc`, `type/canthuc`, `type/dathuc`, `type/phuctap`, `type/point2D`;
+
+  `type/dathuc` := proc(X)
+    if type(X,polynom(anything,x))=true then
+      return true;
+    else
+      return false;
+    fi;
+  end proc:
+
+  `type/phanthuc`:=proc(X)
+    if type(X,dathuc)=true then
+      return false;
+    fi;
+    if type(denom(X),dathuc)=true and type(numer(X),dathuc)=true then
+      return true;
+    else
+      return false;
+    fi;
+  end proc:
+
+  `type/canthuc`:=proc(X)
+    local tuso,mauso;
+    if type(X,dathuc)=true then
+      return false;
+    fi;
+    if type(X,phanthuc)=true then
+      return false;
+    fi;
+    tuso := numer(X);
+    mauso := denom(X);
+    if type(X,radical)=true and type(op(l, X),phanthuc)=true then
+      return true;
+    fi;
+    if type(-X,radical)=true and type(op(l,-X),dathuc)=true then
+      return true;
+    fi;
+    if type(-X,radical)=true and type(op(l,-X),phanthuc)=true then
+      return true;
+    fi;
+    if type(tuso,dathuc)=false then
+      if type(tuso,radical)=true and type(op(l,tuso),dathuc)=false then
+        return false;
+      fi;
+      if type(-tuso,radical)=true and type(op(l,­tuso),dathuc)=false then
+        return false;
+      fi;
+      if type(-tuso,radical)=false and type(tuso,radical)=false then
+        return false;
+      fi;
+    fi;
+    if type(mauso,dathuc)=false then
+      if type(mauso,radical)=false or type(op(l,mauso),dathuc)=false then
+        return false;
+      fi;
+    fi;
+    return true;
+  end proc:
+
+  `type/phuctap`:= proc(X)
+     if type(X,dathuc)=true then
+       return false;
+     fi;
+     if type(X,phanthuc)=true then
+       return false;
+     fi;
+     if type(X,canthuc)=true then
+       return false;
+     fi;
+     return true;
+  end proc:
+
+  `type/point2D`:=[algebraic,algebraic];
+
+end module:
+
+
+DangHamSo := proc(X)
+  if type(X,dathuc)=true then
+    return "dathuc";
+  fi;
+  if type(X,phanthuc)=true then
+    return "phanthuc";
+  fi;
+  if type(X,canthuc)=true then
+    return "canthuc";
+  fi;
+  if type(X,phuctap)=true then
+    return "phuctap";
+  fi;
+end proc:
+
+TapXacDinh := proc(X)
+  global khongxacdinh;
+  local x1,x2,t,t1,j,y,dh,tap,tap2,tap3,f,tap1,tuso,mauso,ketqua,i,heso,luythua,sols,xetmauso,temp;
+  if type(X,dathuc)=true then
+    khongxacdinh := {};
+    return {x};
+  fi;
+  if type(X,phanthuc)=true then
+    mauso := denom(X);
+    khongxacdinh := {solve(mauso=0,x)};
+    ketqua := {};
+    for i in khongxacdinh do
+      if (type(i,complex)=true and Im(i)=0) or type(i,complex)=false then
+        ketqua := ketqua union {x<>i};
+      else
+        khongxacdinh := khongxacdinh minus {i};
+      fi;
+    od;
+    if ketqua={} then
+      ketqua := {x};
+    fi;
+    return ketqua;
+  fi;
+
+  if type(X,canthuc)=true then
+    tuso := numer(X);
+    mauso := denom(X);
+    xetmauso := false;
+    sols := {};
+    khongxacdinh := {};
+    if type(tuso,canthuc)=true then
+      if type(-tuso,radical)=false then
+        heso := op(l,tuso);
+        luythua := op(2,tuso);
+      else
+        heso := op(l,-tuso);
+        luythua := op(2,-tuso);
+      fi;
+      if type(denom(luythua),even)=true then
+        sols := sols union {heso>=0};
+      fi;
+    fi;
+
+    if type(mauso,canthuc)=true then
+      heso := op(l,mauso);
+      luythua := op(2,mauso);
+      if type(denom(luythua),even)=true then
+        sols := sols union {heso>0};
+      else
+        xetmauso := true;
+      fi;
+    else
+      xetmauso := true;
+    fi;
+    if xetmauso=true then
+      khongxacdinh := {solve(mauso=0,x)};
+      for i in khongxacdinh do
+        if type(i,complex)=true and Im(i)<>0 then
+          khongxacdinh := khongxacdinh minus {i};
+        fi;
+      od;
+    fi;
+    ketqua := solve(sols,{x});
+    if {ketqua}={} then
+      ketqua := ketqua union sols;
+    fi;
+    if khongxacdinh<>{} then
+      temp := {};
+      for i in khongxacdinh do
+        temp := temp union {x<>i};
+      od;
+      ketqua := ketqua union {temp};
+    fi;
+    return ketqua;
+  fi;
+  if type(X,phuctap)=true then
+    khongxacdinh:={};
+    dh:=simplify(diff(X,x));
+    tap3:={solve(denom(simplify(X)))};
+    tap2:={solve(denom(simplify(dh)))};
+    for i in tap3 do
+      if type(i,complex)=true and evalf(Im(simplify(i)))<>0 then
+        tap3:=tap3 minus {i};
+      fi;
+    od;
+    for i in tap2 do
+      if type(i,complex)=true and evalf(Im(simplify(i)))<>0 then
+        tap2:=tap2 minus {i};
+      fi;
+    od;
+    tap:=[op(tap2 union tap3 union {-infinity,infinity})];
+    for i from 1 by 1 to nops(tap)-1 do
+      for j from i+l by 1 to nops(tap) do
+        if evalb(evalf(simplify(tap[j]))<evalf(simplify(tap[i])))=true then
+          t:=tap[i];
+          tap[i]:=tap[j];
+          tap[j]:=t;
+        fi;
+      od;
+    od;
+    tap1:={};
+    for i from 1 by 1 to nops(tap)-1 do
+      x1:=tap[i];
+      x2:=tap[i+l];
+      if i=1 then
+        t:=evalf(simplify(eval(denom(X),x=x2-1.411)));
+        t1:=evalf(simplify(eval(numer(X),x=x2-1.411)));
+        y:=evalf(simplify(eval(X,x=x2-1.411)));
+        if type(y,complex)=true and Im(t)=0 and Im(t1)=0 then
+          if evalb( x2 in tap3)<> true then
+            tap1:=tap1 union {{x<=simplify(x2)}};
+          else
+            tap1:=tap1 union {{x<simplify(x2)}};
+          fi;
+        fi;
+      fi;
+      if i=nops(tap)-1 then
+        t:=evalf(simplify(eval(denom(X),x=x1+1.411)));
+        t1:=evalf(simplify(eval(numer(X),x=x1+1.411)));
+        y:=evalf(simplify(eval(X,x=x1+1.411)));
+        if type(y,complex)=true and Im(t)=0 and Im(t1)=0 then
+          if evalb( x1 in tap3)<> true then
+            tap1:=tap1 union {{x>=simplify(x1)}};
+          else
+            tap1:=tap1 union {{x>simplify(x1)}};
+          fi;
+        fi;
+      fi;
+      if i>1 and i<nops(tap)-1 then
+        t:=evalf(simplify(eval(denom(X),x=(x2+x1)/2)));
+        t1:=evalf(simplify(eval(numer(X),x=(x2+x1)/2)));
+        y:=evalf(simplify(eval(X,x=(x2+x1)/2)));
+        if type(y,complex)=true and Im(t)=0 and Im(t1)=0 then
+          if evalb(x1 in tap3)<>true then
+            if evalb( x2 in tap3)<> true then
+              tap1:=tap1 union {{x>=simplify(x1),x<=simplify(x2)}};
+            else
+              tap1:=tap1 union {{x>=simplify(x1),x<simplify(x2)}};
+            fi;
+          else
+            if evalb(x2 in tap3)<> true then
+              tap1:=tap1 union {{x>simplify(x1),x<=simplify(x2)}};
+            else
+              tap1:=tap1 union {{x>simplify(x1),x<simplify(x2)}};
+            fi;
+          fi;
+        fi;
+      fi;
+    od;
+    if tap1={} then
+      for i in tap do
+        if evalb(abs(eval(X,x=i))<infinity)=true then
+          tap1:=tap1 union {i};
+        fi;
+      od;
+    fi;
+    return tap1;
+  fi;
+
+end proc:
+
+
+DiemCucDai := proc(X)
+  local daoham1,daoham2,temp,ketqua,i,j,k;
+  TapXacDinh(X);
+  daoham1 := diff(X,x);
+  daoham2 := diff(daoham1,x);
+  temp := {solve(daoham1=0,x)};
+  for j in temp do
+    k := {op(j)};
+    for i in k do
+      if (type(i,complex)=true and Im(i)<>0) then
+        temp := temp minus {j};
+      fi;
+    od;
+  od;
+  for i in temp do
+    if i in khongxacdinh then
+      temp := temp minus {i};
+    else
+      k:={op(eval(X,x=i))};
+      for j in k do
+        if type(j,complex)=true and Im(j)<>0 then
+          temp := temp minus {i};
+        fi;
+      od;
+    fi;
+  od;
+  
+  ketqua := {};
+  for i in temp do
+    if evalf(eval(daoham2,x=i))<0 then
+      j := simplify(eval(X,x=i));
+      ketqua :=ketqua union {[i,j]};
+    fi;
+  od;
+  return ketqua;
+  
+end proc:
+
+
+DiemCucTieu := proc(X)
+  local daoham1,daoham2,temp,ketqua,i,j,k;
+  TapXacDinh(X);
+  daoham1 := diff(X,x);
+  daoham2 := diff(daoham1,x);
+  temp := {solve(daoham1=0,x)};
+  for j in temp do
+    k := {op(j)};
+    for i in k do
+      if (type(i,complex)=true and Im(i)<>0) then
+        temp := temp minus {j};
+      fi;
+    od;
+  od;
+  for i in temp do
+    if i in khongxacdinh then
+      temp := temp minus {i};
+    else
+      k:={op(eval(X,x=i))};
+      for j in k do
+        if type(j,complex)=true and Im(j)<>0 then
+          temp := temp minus {i};
+        fi;
+      od;
+    fi;
+  od;
+  
+  ketqua := {};
+  for i in temp do
+    if evalf(eval(daoham2,x=i))>0 then
+      j := simplify(eval(X,x=i));
+      ketqua := ketqua union {[i,j]};
+    fi;
+  od;
+  return ketqua;
+end proc:
+
+TapDiemUon := proc(X)
+  local i,j,k,dh,temp,ketqua;
+  TapXacDinh(X);
+  dh:=simplify(diff(X,x$2));
+  temp:={solve(dh,x)};
+  for i in temp do
+    k := {op(i)};
+    for j in k do
+      if type(j,complex)=true and Im(j)<>0 then
+        temp:=temp minus {i};
+      fi;
+    od;
+  od;
+  for i in temp do
+    if i in khongxacdinh then
+      temp := temp minus {i};
+    else
+      k:={op(eval(X,x=i))};
+      for j in k do
+        if type(j,complex)=true and Im(j)<>0 then
+          temp := temp minus {i};
+        fi;
+      od;
+    fi;
+  od;
+  ketqua := {};
+  for i in temp do
+    j := simplify(eval(X,x=i));
+    ketqua := ketqua union {[i,j]};
+  od;
+  return ketqua;
+  
+end proc:
+
+
+KhoangLoiLom := proc(X)
+  local i,j,dh,tap,tap1,t,x1,x2,y1,y2,loi,lom,tap2,t1;
+  TapXacDinh(simplify(X));
+  dh:=simplify(diff(X,x$2));
+  tap2:={solve(dh)};
+  tap1:={solve(denom(simplify(dh)))};
+  tap:=tap1 union khongxacdinh;
+  tap:=tap union tap2;
+  for i in tap do
+    if Im(i)<>0 then
+      tap:=tap minus {i};
+    fi;
+  od;
+  tap:=[op(tap union {-infinity,+infinity})];
+  for i from 1 by 1 to nops(tap)-1 do
+    for j from i+1 by 1 to nops(tap) do
+      if evalb(evalf(tap[j])<evalf(tap[i]))=true then
+        t:=tap[i];
+        tap[i]:=tap[ j];
+        tap[j]:=t;
+      fi;
+    od;
+  od;
+  loi:={};
+  lom:={};
+  if nops(tap)=2 then
+    print("{x}");
+  else
+    for i from 1 by 1 to nops(tap)-1 do
+      x1:=tap[i];
+      x2:=tap[i+1];
+      if i=1 and Im(x2)=0 then
+        y1:=evalf(eval(dh,x=x2-1) );
+        t:=eval(denom(dh),x=x2-1);
+        t1:=eval(numer(dh),x=x2-1);
+        if type(y1,complex)=true and Im(t)=0 and Im(t1)=0 then
+          if y1>=0 then lom:=lom union {{x<x2}};
+          else
+            loi:=loi union {{x<x2}};
+          fi;
+        fi;
+      fi;
+      if i>1 and i<nops(tap)-1 and Im(x1)=0 and Im(x2)=0 then
+        y1:=evalf( eval(dh,x=(x2+x1)/2));
+        t:=eval(denom(dh),x=(x2+x1)/2);
+        t1:=eval(numer(dh),x=(x2+x1)/2);
+        if type(y1,complex)=true and Im(t)=0 and Im(t1)=0 then
+          if y1>=0 then
+            lom:=lom union {{x1<x,x<x2}};
+          else
+            loi:=loi union {{x1<x,x<x2}};
+          fi;
+        fi;
+      fi;
+    end do;
+    result:={loi,lom};
+  fi;
+
+end proc:
+
+
+TiemCanXien := proc(X)
+  local ketqua,a,b,t;
+  ketqua := {};
+  a:=limit(X/x,x=infinity);
+  if evalb(a<infinity)=true and evalb(a>-infinity)=true then
+    b:=limit(X-a*x,x=infinity);
+    if evalb(b<infinity)=true and evalb(b>-infinity)=true then
+      ketqua := ketqua union {y=a*x+b};
+    fi;
+    b:=limit(X-a*x,x=-infinity);
+    if evalb(b<infinity)=true and evalb(b>-infinity)=true then
+      ketqua := ketqua union {y=a*x+b};
+    fi;
+  fi;
+  a:=limit(X/x,x=-infinity);
+  if evalb(a<infinity)=true and evalb(a>-infinity)=true then
+    b:=limit(X-a*x,x=infinity);
+    if evalb(b<infinity)=true and evalb(b>-infinity)=true then
+      ketqua := ketqua union {y=a*x+b};
+    fi;
+    b:=limit(X-a*x,x=-infinity);
+    if evalb(b<infinity)=true and evalb(b>-infinity)=true then
+      ketqua := ketqua union {y=a*x+b};
+    fi;
+  fi;
+  return ketqua;
+end proc:
+
+
+TiemCanDung := proc(X)
+  local i,t,bt,tap,tapdiem,tapthu,taptiemcan;
+  bt:=denom(simplify(X));
+  tap:=solve(bt);
+  taptiemcan:={};
+  for i in tap do
+    if Im(i)=0 then taptiemcan:=taptiemcan union {i};fi;
+  od;
+  tapthu:={};
+  for i in taptiemcan do
+    t:=x=i;
+    tapthu:=tapthu union {t};
+  od;
+  return tapthu;
+end proc:
+
+
+KhoangBienThien := proc(X)
+  local i, j, dh, f, tap, tap1, tapcuctri, t, x1, x2, y1, y2, tang, giam, tap2, t1;
+  TapXacDinh(simplify(X));
+  dh:=simplify(diff(X,x));
+  f:=denom(dh);
+  tap2:={solve(f)};
+  tapcuctri:={};
+  tap1:=DiemCucTri(X);
+  for i in tap1 do
+    tapcuctri:=tapcuctri union {op(1,i)};
+  od;
+  tap:=tapcuctri union khongxacdinh;
+  tap:=tap union tap2;
+  for i in tap do
+    if Im(i)<>0 then tap:=tap minus {i};fi;
+  od;
+  tap:=[op(tap union {-infinity,+infinity})];
+  for i from 1 by 1 to nops(tap)-1 do
+    for j from i+1 by 1 to nops(tap) do
+      if evalb(evalf(tap[j])<evalf(tap[i]))=true then
+        t:=tap[i];
+        tap[i]:=tap[j];
+        tap[j]:=t;
+      fi;
+    od;
+  od;
+  giam:={};
+  tang:={};
+  for i from 1 by 1 to nops(tap)-1 do
+    x1:=tap[i];
+    x2:=tap[i+1];
+    y1:=limit(X,x=x1,right);
+    y2:=limit(X,x=x2,left);
+    if evalb(evalf(y1)>=evalf(y2))=true then #phan nghich bien
+      if i>1 and i<nops(tap)-1 then
+        t:=eval(denom(simplify(X)),x=(x1+x2)/2);
+        t1:=eval(numer(simplify(X)),x=(x1+x2)/2);
+        if type(t,complex)=true and Im(t)=0 and Im(t1)=0 then
+          giam:=giam union {{x1<x,x<x2}};
+        fi;
+      fi;
+      if i=1 then
+        t:=eval(denom(simplify(X)),x=x2-1);
+        t1:=eval(numer(simplify(X)),x=x2-1);
+        if type(t,complex)=true and Im(t)=0 and Im(t1)=0 then
+          giam:=giam union {{x<x2}};
+        fi;
+      fi;
+      if i=nops(tap)-1 then
+        t:=eval(denom(simplify(X)),x=x1+1);
+        t1:=eval(numer(simplify(X)),x=x1+1);
+        if type(t,complex)=true and Im(t)=0 and Im(t1)=0 then
+          giam:=giam union {{x>x1}};
+        fi;
+      fi;
+    else #phan dong bien
+      if i>1 and i<nops(tap)-1 then
+        t:=eval(denom(simplify(X)),x=(x1+x2)/2);
+        t1:=eval(numer(simplify(X)),x=(x1+x2)/2);
+        if type(t,complex)=true and Im(t)=0 and Im(t1)=0 then
+          tang:=tang union {{x1<x,x<x2}};
+        fi;
+      fi;
+      if i=1 then
+        t:=eval(denom(simplify(X)),x=x2-1);
+        t1:=eval(numer(simplify(X)),x=x2-1);
+        if type(t,complex)=true and Im(t)=0 and Im(t1)=0 then
+          tang:=tang union {{x<x2}};
+        fi;
+      fi;
+      if i=nops(tap)-1 then
+        t:=eval(denom(simplify(X)),x=x1+1);
+        t1:=eval(numer(simplify(X)),x=x1+1);
+        if type(t,complex)=true and Im(t)=0 and Im(t1)=0 then
+          tang:=tang union {{x>x1}};
+        fi;
+      fi;
+    fi;
+  od;
+  result:={tang,giam};
+end proc:
+VeDoThi:=proc(X)
+   local y,k;
+   y:=X;
+   if type(X,phanthuc) then
+      k:=op(2,op(1,TiemCanXien(X)));
+      plot([y,k],x=-15..15,-15..15);
+   else 
+      plot(y,x=-15..15,-15..15);
+   end if;  
+end proc:
+end module;
+
+with(KhaoSatHamSo);
